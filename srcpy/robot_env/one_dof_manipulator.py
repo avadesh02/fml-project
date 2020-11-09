@@ -39,9 +39,17 @@ class OneDOFManipulator:
             torque : torque applied at the end of manipulator
         '''
         
-        theta_rad = (np.pi/180)*theta # converting from degree to radians
-        return theta_dot, (torque - self.m*self.g*np.sin(theta_rad))/self.I
+        return theta_dot, (torque - self.m*self.g*np.sin(theta))/self.I
     
+    # def dynamics_x(self, theta, theta_dot, torque):
+    #     '''
+    #     Returns the derivative of the dynamics with respect to states
+    #     Input:
+    #         theta : joint position 
+    #         theta_dot : joint velocity
+    #         torque : torque applied at the end of manipulator
+    #     '''
+
     def integrate_dynamics_euler(self, theta_t, theta_dot_t, torque_t):
         '''
         This function integrates the dynamics of the manipulator for one time step (0.001 sec)
@@ -100,7 +108,7 @@ class OneDOFManipulator:
         self.sim_data = np.array([[initial_theta], [initial_theta_dot], [0.0]])
         self.t = 0 # time counter in milli seconds
             
-    def step_manipulator(self, torque, use_euler = True):
+    def step_manipulator(self, torque, use_euler = False):
         '''
         This function integrates the manipulator dynamics for one time step
         Input:
@@ -123,8 +131,8 @@ class OneDOFManipulator:
             theta_t_1, theta_dot_t_1 = self.integrate_dynamics_runga_kutta(theta_t, theta_dot_t, torque)
             
         # keeping theta between (0, 360)
-        if theta_t_1 > 360:
-            theta_t_1 = theta_t_1%360
+        if theta_t_1 > 2*np.pi:
+            theta_t_1 = theta_t_1%(2*np.pi)
         
         # transforming new joint positions and velocity into array form
         sim_data_t_1 = np.array([[theta_t_1], [theta_dot_t_1], [0.0]])
@@ -164,7 +172,7 @@ class OneDOFManipulator:
             return arm, base, hand
         
         def animate(i):
-            theta_t = (np.pi/180)*sim_data[:,i][0]
+            theta_t = sim_data[:,i][0]
             
             x = self.length*np.sin(theta_t)
             y = -self.length*np.cos(theta_t)
@@ -190,12 +198,12 @@ class OneDOFManipulator:
         '''
         
         fig, axs = plt.subplots(3,1, figsize = (10, 10))
-        axs[0].plot(self.sim_data[0], label = 'joint position')
+        axs[0].plot((180/np.pi)*self.sim_data[0], label = 'joint position')
         axs[0].grid()
         axs[0].legend()
         axs[0].set_ylabel("degrees")
 
-        axs[1].plot(self.sim_data[1], label = 'joint velocity')
+        axs[1].plot((180/np.pi)*self.sim_data[1], label = 'joint velocity')
         axs[1].grid()
         axs[1].legend()
         axs[1].set_ylabel("degrees/sec")
