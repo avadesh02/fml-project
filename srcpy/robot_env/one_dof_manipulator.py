@@ -13,7 +13,7 @@ from matplotlib.animation import FuncAnimation
 
 class OneDOFManipulator:
     
-    def __init__(self, length, mass):
+    def __init__(self, length, mass, dt = 0.001):
         '''
         This function initialises the class OneDOFManipulatorEnv
         Input:
@@ -22,11 +22,13 @@ class OneDOFManipulator:
         '''
         
         self.length = length
-        self.dt = 0.001 # discretization step in seconds
+        self.dt = dt # discretization step in seconds
         self.g = 9.81 # gravity vector
         self.m = mass
         # Computing the intertia of the rod about an axis
         # fixed at the end (1/3)ml^2
+        self.no_states = 2
+        self.no_actions = 1
         self.I = (1/3)*self.m*(self.length**2)
         
     def dynamics(self, theta, theta_dot, torque):
@@ -41,14 +43,32 @@ class OneDOFManipulator:
         
         return theta_dot, (torque - self.m*self.g*np.sin(theta))/self.I
     
-    # def dynamics_x(self, theta, theta_dot, torque):
-    #     '''
-    #     Returns the derivative of the dynamics with respect to states
-    #     Input:
-    #         theta : joint position 
-    #         theta_dot : joint velocity
-    #         torque : torque applied at the end of manipulator
-    #     '''
+    def dynamics_x(self, theta, theta_dot, torque):
+        '''
+        Returns the derivative of the dynamics with respect to states
+        Input:
+            theta : joint position 
+            theta_dot : joint velocity
+            torque : torque applied at the end of manipulator
+        '''
+        A_lin = np.zeros((2,2))
+        A_lin[0,1] = 1
+        A_lin[1,0] = -self.m*self.g*theta_dot*np.cos(theta)/self.I
+
+        return A_lin
+
+    def dynamics_u(self, theta, theta_dot, torque):
+        '''
+        Returns the derivative of the dynamics with respect to torques
+        Input:
+            theta : joint position 
+            theta_dot : joint velocity
+            torque : torque applied at the end of manipulator
+        '''
+        B_lin = np.zeros((2))
+        B_lin[1] = 1/self.I 
+
+        return B_lin
 
     def integrate_dynamics_euler(self, theta_t, theta_dot_t, torque_t):
         '''
@@ -92,7 +112,16 @@ class OneDOFManipulator:
         theta_dot_t_1 = theta_dot_t + (1/6)*self.dt*(k1_thdd + 2*k2_thdd + 2*k3_thdd + k4_thdd)
         
         return theta_t_1, theta_dot_t_1 
-        
+    
+    def integrate_dynamics(self, states, actions):
+        '''
+        This function integrates dynamics for one step using the standard api for ilqr
+        Input:
+            states : the state matrix
+            actions : torques
+        '''
+        return np.array([self.integrate_dynamics_euler(states[0], states[1], actions)])
+
     def reset_manipulator(self, initial_theta, initial_theta_dot):
         '''
         This function resets the manipulator to the initial position
@@ -108,7 +137,7 @@ class OneDOFManipulator:
         self.sim_data = np.array([[initial_theta], [initial_theta_dot], [0.0]])
         self.t = 0 # time counter in milli seconds
             
-    def step_manipulator(self, torque, use_euler = False):
+    def step_manipulator(self, torque, use_euler = True):
         '''
         This function integrates the manipulator dynamics for one time step
         Input:
