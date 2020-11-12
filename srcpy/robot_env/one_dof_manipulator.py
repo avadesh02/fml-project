@@ -43,33 +43,6 @@ class OneDOFManipulator:
         
         return theta_dot, (torque - self.m*self.g*np.sin(theta))/self.I
     
-    def dynamics_x(self, theta, theta_dot, torque):
-        '''
-        Returns the derivative of the dynamics with respect to states
-        Input:
-            theta : joint position 
-            theta_dot : joint velocity
-            torque : torque applied at the end of manipulator
-        '''
-        A_lin = np.zeros((2,2))
-        A_lin[0,1] = 1
-        A_lin[1,0] = -self.m*self.g*theta_dot*np.cos(theta)/self.I
-
-        return A_lin
-
-    def dynamics_u(self, theta, theta_dot, torque):
-        '''
-        Returns the derivative of the dynamics with respect to torques
-        Input:
-            theta : joint position 
-            theta_dot : joint velocity
-            torque : torque applied at the end of manipulator
-        '''
-        B_lin = np.zeros((2))
-        B_lin[1] = 1/self.I 
-
-        return B_lin
-
     def integrate_dynamics_euler(self, theta_t, theta_dot_t, torque_t):
         '''
         This function integrates the dynamics of the manipulator for one time step (0.001 sec)
@@ -120,7 +93,32 @@ class OneDOFManipulator:
             states : the state matrix
             actions : torques
         '''
-        return np.array([self.integrate_dynamics_euler(states[0], states[1], actions)])
+        return np.array([self.integrate_dynamics_euler(states[0], states[1], actions)], dtype=object)
+    
+    def dynamics_x(self, state, torque):
+        '''
+        Returns the derivative of the dynamics with respect to states
+        Input:
+            state : [joint position  joint velocity]
+            torque : torque applied at the end of manipulator
+        '''
+        A_lin = np.zeros((2,2))
+        A_lin[0,1] = 1
+        A_lin[1,0] = -self.m*self.g*np.cos(state[0])/self.I
+
+        return A_lin
+
+    def dynamics_u(self, state, torque):
+        ''' 
+        Returns the derivative of the dynamics with respect to torques
+        Input:
+            state : [joint position  joint velocity]
+            torque : torque applied at the end of manipulator
+        '''
+        B_lin = np.zeros((2,1))
+        B_lin[1] = 1/self.I 
+
+        return B_lin
 
     def reset_manipulator(self, initial_theta, initial_theta_dot):
         '''
