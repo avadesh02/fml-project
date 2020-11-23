@@ -164,6 +164,7 @@ class OneDOFManipulator:
         # transforming new joint positions and velocity into array form
         sim_data_t_1 = np.array([[theta_t_1], [theta_dot_t_1], [0.0]])
         # adding the data to sim_data
+        #Have to check if this line slows things down
         self.sim_data = np.concatenate((self.sim_data, sim_data_t_1), axis = 1)
         # incrementing time
         self.t += 1
@@ -179,6 +180,9 @@ class OneDOFManipulator:
         This function returns the current joint velocity (degrees/sec) of the mainpulator
         '''
         return self.sim_data[:,self.t][1]
+    
+    def get_joint_state(self):
+        return self.sim_data[:,self.t][0:2]
     
     def animate(self, freq = 100):
         
