@@ -42,18 +42,18 @@ ilqr.add_running_cost(crc)
 ilqr.add_terminal_cost(tpc)
 
 x_des, K_arr, k_arr = ilqr.optimize(no_iterations)
-ilqr.plot()
+# ilqr.plot()
 # # simulating controller
-
+env.dt = 0.001
 horizon = int(np.round(T/env.dt, 1)) # duration of simulation steps
-r = horizon/ int(np.round(T/dt, 1))
+r = int(horizon/ int(np.round(T/dt, 1)))
 
-# for t in range(horizon):
-#     x = env.get_position()
-#     xd = env.get_velocity()
-#     state = np.array([x, xd], dtype=object)
-#     torque = np.matmul(K_arr[:,:,int(t//r)],(state - x_des[:,int(t//r)]).transpose()) + k_arr[:,int(t//r)]
-#     env.step_double_integrator(float(torque))
+for t in range(horizon-r):
+    x = env.get_position()
+    xd = env.get_velocity()
+    state = np.array([x, xd], dtype=object)
+    torque = np.matmul(K_arr[int(t//r)],(state - x_des[:,int(t//r)]).transpose()) + k_arr[:,int(t//r)]
+    env.step_double_integrator(float(torque))
 
-# env.animate(10)
-# env.plot()
+env.animate(10)
+env.plot()

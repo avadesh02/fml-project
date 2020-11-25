@@ -171,7 +171,7 @@ class DoubleIntegrator:
         anim = FuncAnimation(fig, animate, init_func=init,
                                        frames=np.shape(sim_data)[1], interval=25, blit=True)
 
-        plt.show(fig)
+        plt.show()
 
     def plot(self):
         '''

@@ -167,25 +167,31 @@ class ILQR:
         for n in range(no_iterations):
             self.forward_pass()
             self.backward_pass()
-            print("finished iteration {} and the cost is {}".format(n, self.iter_cost_arr[-1]))
-
-            # if n > 3:
-            #     if self.iter_cost_arr[-1] > self.iter_cost_arr[-2]:
-            #         break
-
-            # plt.plot(self.iter_traj_arr[n][0])
-        # plt.plot(self.iter_cost_arr)
+            print("finished iteration {} and the cost is {}".format(n, self.iter_cost_arr[-1]), end='\r')
+            
         self.forward_pass()
-        # plt.plot(self.iter_traj_arr[n+1][0])
-        plt.plot(self.u[0])
-        plt.show()
+
 
         return self.x_nom, self.K, self.u
 
     def plot(self):
         
-        plt.plot((180/np.pi)*self.x[0], label = "new_traj")
-        plt.grid()
+        fig, ax = plt.subplots(3,1)
+        
+        for i in range(self.env.no_states):
+            ax[0].plot(self.x[i], label = "trajectory: state no " + str(i))
+        ax[0].grid()
+        ax[0].legend()
+
+        for i in range(self.env.no_actions):
+            ax[1].plot(self.u[i], label = "control: action no " + str(i))
+        ax[1].grid()
+        ax[1].legend()
+
+        ax[2].plot(self.iter_cost_arr, label = "cost")
+        ax[2].grid()
+        ax[2].legend()
+
         plt.legend()
         plt.show()
         
