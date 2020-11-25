@@ -41,7 +41,7 @@ class OneDOFManipulator:
             torque : torque applied at the end of manipulator
         '''
         
-        return theta_dot, (torque - self.m*self.g*np.sin(theta))/self.I
+        return np.round(theta_dot,3), np.round((torque - self.m*self.g*np.sin(theta))/self.I,3)
     
     def integrate_dynamics_euler(self, theta_t, theta_dot_t, torque_t):
         '''
@@ -59,8 +59,11 @@ class OneDOFManipulator:
         
         theta_t_1 = theta_t + joint_velocity*self.dt
         theta_dot_t_1 = theta_dot_t + joint_acceleration*self.dt
-        
-        return theta_t_1, theta_dot_t_1
+
+        # keeping theta between 0 to 360 degrees
+        theta_t_1 = np.sign(theta_t_1)*(abs(theta_t_1)%(2*np.pi))
+
+        return np.round(theta_t_1,3), np.round(theta_dot_t_1,3)
     
     def integrate_dynamics_runga_kutta(self, theta_t, theta_dot_t, torque_t):
         '''
@@ -84,7 +87,10 @@ class OneDOFManipulator:
         theta_t_1 = theta_t + (1/6)*self.dt*(k1_thd + 2*k2_thd + 2*k3_thd + k4_thd)
         theta_dot_t_1 = theta_dot_t + (1/6)*self.dt*(k1_thdd + 2*k2_thdd + 2*k3_thdd + k4_thdd)
         
-        return theta_t_1, theta_dot_t_1 
+        # keeping theta between -360 to 360 degrees
+        theta_t_1 = np.sign(theta_t_1)*(abs(theta_t_1)%(2*np.pi))
+
+        return np.round(float(theta_t_1),3), np.round(float(theta_dot_t_1),3) 
     
     def integrate_dynamics(self, states, actions):
         '''
@@ -93,22 +99,22 @@ class OneDOFManipulator:
             states : the state matrix
             actions : torques
         '''
-        return np.array([self.integrate_dynamics_euler(states[0], states[1], actions)], dtype=object)
+        return np.array([self.integrate_dynamics_runga_kutta(states[0], states[1], actions)], dtype=object)
     
-    def dynamics_x(self, state, torque):
+    def dynamics_x(self, state, torque, dt):
         '''
         Returns the derivative of the dynamics with respect to states
         Input:
             state : [joint position  joint velocity]
             torque : torque applied at the end of manipulator
         '''
-        A_lin = np.zeros((2,2))
-        A_lin[0,1] = 1
-        A_lin[1,0] = -self.m*self.g*np.cos(state[0])/self.I
+        A_lin = np.identity(2)
+        A_lin[0,1] = dt
+        A_lin[1,0] = -np.round(self.m*self.g*np.cos(state[0])/self.I, 2)
 
         return A_lin
 
-    def dynamics_u(self, state, torque):
+    def dynamics_u(self, state, torque, dt):
         ''' 
         Returns the derivative of the dynamics with respect to torques
         Input:
@@ -116,7 +122,7 @@ class OneDOFManipulator:
             torque : torque applied at the end of manipulator
         '''
         B_lin = np.zeros((2,1))
-        B_lin[1] = 1/self.I 
+        B_lin[1] = dt/self.I 
 
         return B_lin
 
@@ -157,10 +163,6 @@ class OneDOFManipulator:
             
             theta_t_1, theta_dot_t_1 = self.integrate_dynamics_runga_kutta(theta_t, theta_dot_t, torque)
             
-        # keeping theta between (0, 360)
-        if theta_t_1 > 2*np.pi:
-            theta_t_1 = theta_t_1%(2*np.pi)
-        
         # transforming new joint positions and velocity into array form
         sim_data_t_1 = np.array([[theta_t_1], [theta_dot_t_1], [0.0]])
         # adding the data to sim_data
