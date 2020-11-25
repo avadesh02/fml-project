@@ -4,6 +4,11 @@
 
 import os.path
 import sys
+print("Printing some details of the Compiler:\nPython version")
+print (sys.version)
+print("Version info.")
+print (sys.version_info)
+
 curdir = os.path.dirname(__file__)
 cdir = os.path.abspath(os.path.join(curdir,'../../srcpy/'))
 sys.path.append(cdir)
