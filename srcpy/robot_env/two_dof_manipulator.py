@@ -131,8 +131,8 @@ class TwoDOFManipulator:
             init_thd2 : initial joint velocity 2
         '''
         # converting to radians
-        init_th1 = (np.pi/180)*init_th1
-        init_th2 = (np.pi/180)*init_th2
+        init_th1 = init_th1
+        init_th2 = init_th2
         
         # Creating an array to store the history of robot states as the dynamics are integrated
         # each row corresponds to one state just as in the case of the 1DOF env
@@ -177,7 +177,7 @@ class TwoDOFManipulator:
         '''
         This function returns the current joint position (degrees) of the mainpulator
         '''
-        return (180/np.pi)*self.sim_data[:,self.t][0], (180/np.pi)*self.sim_data[:,self.t][1] 
+        return self.sim_data[:,self.t][0], self.sim_data[:,self.t][1] 
     
     def get_joint_velocity(self):
         '''
