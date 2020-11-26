@@ -126,6 +126,8 @@ class ILQR:
         for t in range(self.n):
             self.u[:,t] += np.matmul(self.K[t], (self.x[:,t] - self.x_nom[:,t])) + self.k[t]
             self.x[:,t+1] = self.env.integrate_dynamics(self.x[:,t], self.u[:,t])
+            if np.isnan(self.x[:,t+1]).any():
+                assert False
 
             epi_cost += self.compute_running_cost(t) 
         

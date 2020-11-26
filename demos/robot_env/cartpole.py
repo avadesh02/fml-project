@@ -16,7 +16,7 @@ sys.path.append(cdir)
 import numpy as np
 from robot_env.cartpole import Cartpole
 
-env = Cartpole(1, 1, 2)
+env = Cartpole(2, 0.5, 2)
 
 init_x = 0
 init_theta = 0*(np.pi/180)

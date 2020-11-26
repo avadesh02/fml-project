@@ -41,6 +41,7 @@ class Cartpole:
         dy[2] = (1/(self.mc + self.mp*np.sin(theta)**2))*(actions + self.mp*np.sin(theta)*(self.lp*theta_d**2 + self.g*np.cos(theta)))
         dy[3] = (1/(self.lp*(self.mc + self.mp*np.sin(theta)**2)))*(-actions*np.cos(theta) - self.mp*self.lp*(theta_d**2)*0.5*np.sin(2*theta) - (self.mc + self.mp)*self.g*np.sin(theta))
 
+        # print(self.mc + self.mp*np.sin(theta)**2, theta)
         return dy
 
     def dynamics_state_derivative(self, x, theta, xd, theta_d, actions):
@@ -54,10 +55,18 @@ class Cartpole:
             action : force applied to the base
         '''
         # https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-832-underactuated-robotics-spring-2009/readings/MIT6_832s09_read_ch03.pdf
-        A_x = np.zeros(4)
+        A_x = np.zeros((4,4))
         A_x[0,2] = 1.0
         A_x[1,3] = 1.0
-        # A_x[]
+
+        den = (self.mc + self.mp*np.sin(theta)**2)    
+        A_x[2,1] = (-self.mp*np.sin(2*theta)*(actions + self.mp*np.sin(theta)*(self.lp*theta_d**2 + self.g*np.cos(theta))))/den**2 \
+                    + (actions + self.lp*self.mp*np.cos(theta)*theta_d**2 + self.mp*self.g*np.cos(2*theta))/den
+        
+        A_x[2,3] = 2*self.mp*self.lp*theta_d*np.sin(theta)/den
+
+        A_x[3,1] = (-self.mp*np.sin(2*theta)*(-actions*np.cos(theta) - 0.5*self.mp*self.lp*np.sin(2*theta_d)*theta_d**2 - (self.mc + self.mp)*self.g*np.sin(theta)))/(self.lp*den**2) + \
+                    (actions*np.sin(theta) - self.mp*self.lp*np.cos(2*theta_d)*theta_d**2 - (self.mc + self.mp)*self.g*np.cos(theta))/(self.lp*den)  
 
         return A_x
 
@@ -69,6 +78,7 @@ class Cartpole:
             states : the state matrix
             actions : torques
         '''
+    
         return np.add(state, self.dynamics(state[0], state[1], state[2], state[3], actions)*self.dt)
 
     def dynamics_x(self, state, actions, dt):
@@ -88,8 +98,9 @@ class Cartpole:
             actions : torques
         '''
         B_lin = np.zeros((4,1))
-        B_lin[2] = (1/(self.mc + self.mp*np.sin(theta)**2))
-        B_lin[3] = (1/(self.lp*(self.mc + self.mp*np.sin(theta)**2)))*(-np.cos(state[0]))
+        den = (self.mc + self.mp*np.sin(state[1])**2)
+        B_lin[2] = (1/den)
+        B_lin[3] = (1/(self.lp*den))*(-np.cos(state[1]))
 
         return B_lin
 
@@ -123,14 +134,14 @@ class Cartpole:
         '''
         This function returns the state of the system at the current time step
         '''
-        return self.sim_data[:,self.t]
+        return self.sim_data[:,self.t][0:4]
 
     def animate(self, freq = 25):
         
         sim_data = self.sim_data[:,::freq]
 
         fig = plt.figure()
-        ax = plt.axes(xlim=(-self.length - 5, self.length+ 5), ylim=(-self.length - 5, self.length + 5))
+        ax = plt.axes(xlim=(-self.length - 20, self.length+ 20), ylim=(-self.length - 20, self.length + 20))
         text_str = "Cartpole Animation"
         
         left, = ax.plot([], [], lw=4)
