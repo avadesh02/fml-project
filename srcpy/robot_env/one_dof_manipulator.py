@@ -110,7 +110,7 @@ class OneDOFManipulator:
         '''
         A_lin = np.identity(2)
         A_lin[0,1] = dt
-        A_lin[1,0] = -np.round(self.m*self.g*np.cos(state[0])/self.I, 2)
+        A_lin[1,0] = -np.round(self.m*self.g*dt*np.cos(state[0])/self.I, 2)
 
         return A_lin
 

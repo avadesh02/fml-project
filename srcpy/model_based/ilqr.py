@@ -8,14 +8,16 @@ from matplotlib import pyplot as plt
 
 class ILQR:
 
-    def __init__(self, env, dt):
+    def __init__(self, env, dt, beta = 0.75):
         '''
         Input:
             env : the dynamics of the system for which trajectory is generated
             dt : discretization
+            beta : line seach reduction factor
         '''
         self.env = env
         self.dt = dt
+        self.beta = beta
         self.iter_cost_arr = [] # stores cost after each forward pass
         self.iter_traj_arr = [] # stores new trajectory after every iteration
 
@@ -122,16 +124,42 @@ class ILQR:
         '''
         This function runs the forward pass for the ilqr
         '''
-        epi_cost = 0
-        for t in range(self.n):
-            self.u[:,t] += np.matmul(self.K[t], (self.x[:,t] - self.x_nom[:,t])) + self.k[t]
-            self.x[:,t+1] = self.env.integrate_dynamics(self.x[:,t], self.u[:,t])
-            if np.isnan(self.x[:,t+1]).any():
-                assert False
+        alpha = 1 # step length
+        x_base = self.x.copy()
+        u_base = self.u.copy()
+        return_alpha = False
+        old_cost = 1e+1000
+        z = 0
+        # print('\n')
+        while alpha > 0.001 and z < 20:
+            epi_cost = 0
+            self.x = x_base.copy()
+            self.u = u_base.copy()
+            for t in range(self.n):
+                self.u[:,t] = u_base[:,t] + np.matmul(self.K[t], (self.x[:,t] - self.x_nom[:,t])) + alpha*self.k[t]
+                self.x[:,t+1] = self.env.integrate_dynamics(self.x[:,t], self.u[:,t])
+                if np.isnan(self.x[:,t+1]).any():
+                    assert False
 
-            epi_cost += self.compute_running_cost(t) 
-        
-        epi_cost += self.compute_terminal_cost(t+1)
+                epi_cost += self.compute_running_cost(t) 
+            epi_cost += self.compute_terminal_cost(t+1)
+            z += 1
+            # print(epi_cost, alpha)
+
+            if len(self.iter_cost_arr) == 0:
+                break
+            elif return_alpha:
+                break
+            elif epi_cost < self.iter_cost_arr[-1]:
+                break
+            elif old_cost < epi_cost:
+                alpha = (1/self.beta)*alpha
+                return_alpha = True
+                old_cost = epi_cost
+            else:
+                alpha = self.beta*alpha
+                old_cost = epi_cost
+        # print('done \n')
         self.iter_cost_arr.append(float(epi_cost))
         self.iter_traj_arr.append(self.x)
         self.x_nom = self.x.copy()
@@ -166,13 +194,15 @@ class ILQR:
         '''
         This function runs ilqr and returs optimal trajectory
         '''
-        for n in range(no_iterations):
-            self.forward_pass()
-            self.backward_pass()
-            print("finished iteration {} and the cost is {}".format(n, self.iter_cost_arr[-1]), end='\r')
-            
         self.forward_pass()
-
+        for n in range(no_iterations):
+            self.backward_pass()
+            self.forward_pass()
+            print("finished iteration {} and the cost is {}".format(n, self.iter_cost_arr[n+1]), end='\r')
+            
+            if len(self.iter_cost_arr) > 2:
+                if self.iter_cost_arr[-2] < self.iter_cost_arr[-1]:
+                    break
 
         return self.x_nom, self.K, self.u
 
@@ -190,7 +220,7 @@ class ILQR:
         ax[1].grid()
         ax[1].legend()
 
-        ax[2].plot(self.iter_cost_arr, label = "cost")
+        ax[2].plot(self.iter_cost_arr[1:], label = "cost")
         ax[2].grid()
         ax[2].legend()
 

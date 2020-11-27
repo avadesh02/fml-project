@@ -18,22 +18,23 @@ from model_based.ilqr import ILQR
 
 # initialising the env
 env = OneDOFManipulator(1, 1)
-theta_init = 60*(np.pi/180)
+theta_init = 0*(np.pi/180)
 env.reset_manipulator(theta_init,0)
 x_init = np.array([env.get_joint_position(), env.get_joint_velocity()])
 # defining the cost
 x_terminal = np.array([180*(np.pi/180), 0]) 
-Q_t = 10.0*np.identity(2)
-Q_f = 10*np.identity(2)
-R_t = 1e-5
+Q_t = np.identity(2)
+Q_t[0,0], Q_t[1,1] = [100, 20]
+Q_f = Q_t
+R_t = 1e-2
 
 ptc = QuadraticTrackingCost(env, x_terminal, Q_t)
 tpc = TerminalQuadraticTrackingCost(env, x_terminal, Q_f)
 crc = ControlRegularizerCost(env, R_t)
 # initialising ilqr
 dt = 0.01
-T = 2.5
-no_iterations = 80
+T = 2
+no_iterations = 20
 ilqr = ILQR(env, dt)
 ilqr.initialize(T, x_init)
 env.dt = dt
@@ -58,4 +59,4 @@ for t in range(horizon):
     env.step_manipulator(float(torque), True)
 
 env.animate(1)
-env.plot()
+# env.plot()

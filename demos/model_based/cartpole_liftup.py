@@ -1,4 +1,4 @@
-## This is a demo that generates a plan for the cartpole env using ilqr
+## This is a demo that generates a plan to lift a cartpole up
 ## Author : Avadesh Meduri
 ## Date : 25/11/2020
 
@@ -17,12 +17,12 @@ from model_based.ilqr import ILQR
 
 
 # initialising the env
-env = Cartpole(5, 1, 5)
+env = Cartpole(10, 5, 5)
 
 init_x = 0
-init_theta = 140*(np.pi/180)
+init_theta = 50*(np.pi/180)
 init_xd = 0
-init_theta_d = 0.5
+init_theta_d = 0
 
 env.reset_cartpole(init_x, init_theta, init_xd, init_theta_d)
 
@@ -36,18 +36,18 @@ theta_d_terminal = 0
 state_terminal = np.array([x_terminal, theta_terminal, xd_terminal, theta_d_terminal])
 
 Q_t = 1e-5*np.identity(4)
-Q_t[0,0], Q_t[1,1], Q_t[2,2], Q_t[3,3] = [1e-8, 1.5e+2, 1e-8, 1e-8]
+Q_t[0,0], Q_t[1,1], Q_t[2,2], Q_t[3,3] = [1e+2, 2e+2, 1e-8, 1e-3]
 Q_f = Q_t
-
-R_t = 1e-5
+Q_f[3,3] = 1e-1
+R_t = 1e-3
 
 ptc = QuadraticTrackingCost(env, state_terminal, Q_t)
 tpc = TerminalQuadraticTrackingCost(env, state_terminal, Q_f)
 crc = ControlRegularizerCost(env, R_t)
 # initialising ilqr
 dt = 0.01
-T = 2.
-no_iterations = 100
+T = 4.
+no_iterations = 80
 ilqr = ILQR(env, dt)
 ilqr.initialize(T, x_init)
 env.dt = dt
@@ -69,5 +69,5 @@ for t in range(horizon):
     torque = np.matmul(K_arr[int(t//r)],(state - x_des[:,int(t//r)]).transpose()) + k_arr[:,int(t//r)]
     env.step_cartpole(float(torque))
 
-env.animate(15)
+env.animate(25)
 env.plot()

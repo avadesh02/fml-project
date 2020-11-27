@@ -16,10 +16,10 @@ sys.path.append(cdir)
 import numpy as np
 from robot_env.cartpole import Cartpole
 
-env = Cartpole(2, 0.5, 2)
+env = Cartpole(5, 1, 5)
 
 init_x = 0
-init_theta = 0*(np.pi/180)
+init_theta = 250*(np.pi/180)
 init_xd = 0
 init_theta_d = 0
 
@@ -29,7 +29,9 @@ horizon = 10000 # duration of simulation steps
 
 for t in range(horizon):
     
-    torque = -5.0
+    state = env.get_states()
+    # torque = -20*(state[0] - 5*np.sin(np.pi*0.001*t))
+    torque = 0
     env.step_cartpole(torque)
 
 env.animate()

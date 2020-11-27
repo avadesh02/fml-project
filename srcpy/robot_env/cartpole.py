@@ -61,12 +61,13 @@ class Cartpole:
 
         den = (self.mc + self.mp*np.sin(theta)**2)    
         A_x[2,1] = (-self.mp*np.sin(2*theta)*(actions + self.mp*np.sin(theta)*(self.lp*theta_d**2 + self.g*np.cos(theta))))/den**2 \
-                    + (actions + self.lp*self.mp*np.cos(theta)*theta_d**2 + self.mp*self.g*np.cos(2*theta))/den
+                    + (self.lp*self.mp*np.cos(theta)*theta_d**2 + self.mp*self.g*np.cos(2*theta))/den
         
         A_x[2,3] = 2*self.mp*self.lp*theta_d*np.sin(theta)/den
 
-        A_x[3,1] = (-self.mp*np.sin(2*theta)*(-actions*np.cos(theta) - 0.5*self.mp*self.lp*np.sin(2*theta_d)*theta_d**2 - (self.mc + self.mp)*self.g*np.sin(theta)))/(self.lp*den**2) + \
-                    (actions*np.sin(theta) - self.mp*self.lp*np.cos(2*theta_d)*theta_d**2 - (self.mc + self.mp)*self.g*np.cos(theta))/(self.lp*den)  
+        A_x[3,1] = (self.mp*np.sin(2*theta)*(actions*np.cos(theta) + 0.5*self.mp*self.lp*(theta_d**2)*np.sin(2*theta) + (self.mc + self.mp)*self.g*np.sin(theta)))/(self.lp*(den**2)) + \
+                    (actions*np.sin(theta) - self.mp*self.lp*np.cos(2*theta)*theta_d**2 - (self.mc + self.mp)*self.g*np.cos(theta))/(self.lp*den)
+        A_x[3,3] = (-self.mp*self.lp*theta_d*(np.sin(2*theta)))/(self.lp*den)
 
         return A_x
 
@@ -99,8 +100,8 @@ class Cartpole:
         '''
         B_lin = np.zeros((4,1))
         den = (self.mc + self.mp*np.sin(state[1])**2)
-        B_lin[2] = (1/den)
-        B_lin[3] = (1/(self.lp*den))*(-np.cos(state[1]))
+        B_lin[2] = (dt/den)
+        B_lin[3] = (dt/(self.lp*den))*(-np.cos(state[1]))
 
         return B_lin
 
@@ -141,7 +142,7 @@ class Cartpole:
         sim_data = self.sim_data[:,::freq]
 
         fig = plt.figure()
-        ax = plt.axes(xlim=(-self.length - 20, self.length+ 20), ylim=(-self.length - 20, self.length + 20))
+        ax = plt.axes(xlim=(-self.length - 10, self.length+ 10), ylim=(-self.length - 10, self.length + 10))
         text_str = "Cartpole Animation"
         
         left, = ax.plot([], [], lw=4)
