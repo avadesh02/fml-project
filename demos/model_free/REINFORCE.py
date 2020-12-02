@@ -64,7 +64,8 @@ for e in range(epochs):
 
         # update current state
         state = next_state
-
+        
+        # Break loop when game is over
         if done:
             break
 
