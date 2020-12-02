@@ -10,8 +10,8 @@ alpha = 0.0015
 gamma = 0.99
 
 # Initialize environment and weights
-env = gym.make('CartPole-v1') #Needs to change w.r.t. custom env
-nA = env.action_space.n #Needs to change w.r.t. custom env
+env = gym.make('CartPole-v1') #-todo-Needs to change w.r.t. custom env
+nA = env.action_space.n #-todo-Needs to change w.r.t. custom env
 np.random.seed(1)
 w = np.random.rand(4, 2)
 episode_rewards = []
