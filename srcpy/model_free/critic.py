@@ -8,7 +8,7 @@ from math import pi, sqrt, exp
 
 class LinearFeaturesCritic:
 
-    def __init__(self, env, dt):
+    def __init__(self, env, dt, DEBUG):
         '''
         Input:
             env : the dynamics of the system for which trajectory is generated
@@ -16,7 +16,8 @@ class LinearFeaturesCritic:
         '''
         self.env = env
         self.dt = dt
-        self.gradient = [] # stores gradient after each forward pass
+        self.DEBUG = DEBUG
+        self.parameters_history = []
 
     def initialize(self, alpha, gamma, parameters, features_generator):
         '''
@@ -28,12 +29,14 @@ class LinearFeaturesCritic:
         self.alpha = alpha
         self.gamma = gamma
         self.parameters = parameters
+        self.parameters_history.append(self.parameters)
         self.features_generator = features_generator
 
     def get_value(self, state):
         state_features = self.features_generator.get_s_features(state)
-        state_value = np.dot(self.parameters[0:4], state_features)
-        print("State value: {}".format(state_value))
+        state_value = np.dot(self.parameters, state_features)
+        if(self.DEBUG):
+            print("State value: {}".format(state_value))
         return float(state_value)
     
     def get_grad_value(self, state):
@@ -45,29 +48,38 @@ class LinearFeaturesCritic:
         This function runs the forward pass for the critic
         '''
         #self.gradient = []
-        self.delta = reward + self.gamma* self.get_value(state_new) - self.get_value(state)
+        self.delta = reward - self.get_value(state) + self.gamma* self.get_value(state_new)
+        if(self.DEBUG):
+            print("Delta: {}".format(self.delta))
     
     def backward_pass(self, state):
         self.parameters = self.parameters + np.multiply(self.get_grad_value(state), self.alpha * self.delta)
+        self.parameters_history.append(self.parameters)
+        if(self.DEBUG):
+            print("Value parameters: {}".format(self.parameters))
         return self.delta
-        
-    
-
-    def optimize(self, no_iterations = 10):
-        '''
-        This function runs ilqr and returs optimal trajectory
-        '''
-        for n in range(no_iterations):
-            self.forward_pass()
-            self.backward_pass()
-            print("finished iteration {} and the cost is {}".format(n, self.cost_arr[-1]))
-        
-        return self.x_nom, self.K, self.u
 
     def plot(self):
         
         plt.plot((180.0/np.pi)*self.x[0], label = "new_traj")
         plt.grid()
         plt.legend()
+        plt.show()
+        
+    def plot_policy(self):
+        '''
+        This function plots the joint positions, velocities and torques
+        '''
+        policy_size = len(self.parameters)
+        fig, axs = plt.subplots(policy_size,1, figsize = (10, 10))
+        self.policy_history = np.asarray(self.parameters_history)
+        
+        for i in range(policy_size):
+            axs[i].plot(self.policy_history[:,i], label = str(i+1)+'st Parameter')
+            axs[i].grid()
+            axs[i].legend()
+            #axs[0].set_ylabel("degrees")
+    
+    
         plt.show()
         
