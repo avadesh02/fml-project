@@ -52,7 +52,7 @@ class LinearFeaturesGaussianActor:
         if(self.DEBUG):
             print("state features: {}".format(state_features))
         mu = np.dot(self.parameters, state_features)
-        sigma=0.1
+        sigma=0.5
         #sigma = exp(np.dot(self.parameters[1], state_features))#float?
         #print("log sigma: {}".format(np.dot(self.parameters[1], state_features)))
         if(self.DEBUG):
@@ -79,7 +79,8 @@ class LinearFeaturesGaussianActor:
         This function runs the forward pass for the actor
         '''
         t = self.env.t
-        jp, jp_d = self.env.get_joint_state()
+        #jp, jp_d = self.env.get_joint_state()
+        jp, jp_d = self.env.get_state()
         state = np.array([jp, jp_d], dtype=object)#line can be merged with line above.
         if(self.DEBUG):
             print("State: {}".format(state))
@@ -88,10 +89,14 @@ class LinearFeaturesGaussianActor:
         reward = -1 * (self.cost.intermediate_cost.compute(state, t).item())#the new way to get one item
         if(self.cost.control_cost != None):
             reward += -1 * (self.cost.control_cost.compute(action, t).item())
+        if(self.cost.terminal_cost != None):
+            reward += -1 * (self.cost.terminal_cost.compute(state, t))
         if(self.DEBUG):
             print("reward: {}".format(reward))
-        self.env.step_manipulator(float(action), use_euler = use_euler)
-        jp_new, jp_d_new = self.env.get_joint_state()
+        #self.env.step_manipulator(float(action), use_euler = use_euler)
+        self.env.step_double_integrator(float(action))
+        #jp_new, jp_d_new = self.env.get_joint_state()
+        jp_new, jp_d_new = self.env.get_state()
         state_new = np.array([jp_new, jp_d_new], dtype=object)
         #print("t: {}, self.env.t: {}".format(t, self.env.t))
         #self.state_history[:,t+1] = jp_new, jp_d_new#t+1 is the new self.env.t
@@ -124,8 +129,10 @@ class LinearFeaturesGaussianActor:
         for episode in range(no_episodes):
             #self.factor = 1#????
             self.cost_arr_index_prev = self.cost_arr_index
-            new_init_theta = np.random.uniform(radians(89), radians(91))
-            new_init_vel = np.random.uniform(-radians(2.),radians(2.))
+            new_init_theta = 0#name has to change
+            new_init_vel = 0
+            #new_init_theta = np.random.uniform(radians(89), radians(91))
+            #new_init_vel = np.random.uniform(-radians(2.),radians(2.))
             self.env.reset_state(new_init_theta, new_init_vel)
             iter = 0
             for n in range(no_iterations):
@@ -139,14 +146,17 @@ class LinearFeaturesGaussianActor:
                 #if(abs(reward) < 0.001):
                  #   print("\nBREAKING 'cuz target reached\n")
                   #  break
-                state = np.array(self.env.get_joint_state(), dtype=object)
-                if(abs(state[0] - radians(90)) > radians(2) or abs(state[1]) > 100):
+                #state = np.array(self.env.get_joint_state(), dtype=object)
+                state = np.array(self.env.get_state(), dtype=object)
+                #if(abs(state[0] - radians(90)) > radians(2) or abs(state[1]) > 100):
+                if(abs(state[0] - 2) > 4 or abs(state[1]) > 10):
+                    print("Out of bounds. Ending iteration in episode " + str(episode))
                     break
             episode_cost = sum(self.cost_arr[self.cost_arr_index_prev: self.cost_arr_index])
             self.episode_cost_arr.append(episode_cost)
             if(episode %1 == 0):
-                print("Episode {} ({}, {})\t: done with cost {} \tin iterations {}.".format(episode, new_init_theta - radians(90), new_init_vel, episode_cost, iter+1))
-
+                #print("Episode {} ({}, {})\t: done with cost {} \tin iterations {}.".format(episode, new_init_theta - radians(90), new_init_vel, episode_cost, iter+1))
+                print("Episode {} ({}, {})\t: done with cost {} \tin iterations {}.".format(episode, new_init_theta, new_init_vel, episode_cost, iter+1))
     def plot(self):  
         plt.plot((180.0/np.pi)*self.state_history[0], label = "trajectory")
         plt.grid()

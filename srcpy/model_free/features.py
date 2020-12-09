@@ -17,18 +17,19 @@ class LinearFeatures:
         #       (state[0] - 90*(np.pi/180)) * (state[0] - 90*(np.pi/180)), state[1] * state[1]]
         x_sign = math.copysign(1.0, state[0] - math.radians(90))
         x_abs = abs(state[0])
-        x_abs_log = math.log(x_abs)
-        x_abs_log_signed = x_abs_log * x_sign
+        #x_abs_log = math.log(x_abs)
+        #x_abs_log_signed = x_abs_log * x_sign
         y_sign = math.copysign(1.0, state[1])
         y_abs = abs(state[1])
-        #print(sys.float_info.min)
+        #print(y_abs)
         #y_abs_log = math.log(max(y_abs, sys.float_info.min))#in case y_abs = 0.0
-        y_abs_log = math.log(y_abs)
-        y_abs_log_signed = y_abs_log * y_sign
+        #y_abs_log = math.log(y_abs)
+        #y_abs_log_signed = y_abs_log * y_sign
         
         #return [x_abs_log_signed, y_abs_log_signed, x_abs_log_signed * y_abs_log_signed]#This XOR like feature is important
-        return [x_abs_log_signed, y_abs_log_signed, x_abs_log_signed * y_abs_log_signed,
-                state[0] - math.radians(90), state[1]]
+        #return [x_abs_log_signed, y_abs_log_signed, x_abs_log_signed * y_abs_log_signed,
+        #        state[0] - math.radians(90), state[1]]
+        return [state[0] - 2, state[1] - 0]
         #return [y_abs_log_signed, x_abs_log_signed * y_abs_log_signed]
         #return [state[0] - 90*(np.pi/180), state[1], 
         #        (state[0] - 90*(np.pi/180)) * (state[1])* (state[1])* (state[1]),
@@ -43,3 +44,14 @@ class LinearFeatures:
         #        state[0] * action, abs(state[1] * action), state[1] * action]
         return [state[0] - 90*(np.pi/180), abs(state[0] - 90*(np.pi/180)), 
                 state[1], abs(state[1]), action, abs(action)]
+        
+class LinearFeaturesWithOne:
+
+    def __init__(self):
+        pass
+        
+    def get_s_features(self, state):
+        features = [state[0] - 2, state[1] - 0]
+        features.append(1.0)
+        return features
+        #return features.append(1.0) #returned None
