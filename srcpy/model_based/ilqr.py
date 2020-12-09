@@ -130,7 +130,6 @@ class ILQR:
         return_alpha = False
         old_cost = 1e+1000
         z = 0
-        # print('\n')
         while alpha > 0.001 and z < 20:
             epi_cost = 0
             self.x = x_base.copy()
@@ -144,7 +143,6 @@ class ILQR:
                 epi_cost += self.compute_running_cost(t) 
             epi_cost += self.compute_terminal_cost(t+1)
             z += 1
-            # print(epi_cost, alpha)
 
             if len(self.iter_cost_arr) == 0:
                 break
@@ -159,7 +157,7 @@ class ILQR:
             else:
                 alpha = self.beta*alpha
                 old_cost = epi_cost
-        # print('done \n')
+
         self.iter_cost_arr.append(float(epi_cost))
         self.iter_traj_arr.append(self.x)
         self.x_nom = self.x.copy()

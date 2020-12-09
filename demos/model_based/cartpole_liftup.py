@@ -20,7 +20,7 @@ from model_based.ilqr import ILQR
 env = Cartpole(10, 5, 5)
 
 init_x = 0
-init_theta = 50*(np.pi/180)
+init_theta = 0*(np.pi/180)
 init_xd = 0
 init_theta_d = 0
 
