@@ -140,6 +140,17 @@ class OneDOFManipulator:
         
         self.sim_data = np.array([[initial_theta], [initial_theta_dot], [0.0]])
         self.t = 0 # time counter in milli seconds
+
+    def reset_state(self, new_theta, new_theta_dot):
+        '''
+        This function resets the manipulator to a new position
+        Input:
+            new_theta : new joint position
+            new_theta_dot : new joint velocity
+        '''
+        sim_data_t_1 = np.array([[new_theta], [new_theta_dot], [0.0]])
+        self.sim_data = np.concatenate((self.sim_data, sim_data_t_1), axis = 1)
+        self.t += 1
             
     def step_manipulator(self, torque, use_euler = True):
         '''
