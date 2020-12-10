@@ -47,6 +47,7 @@ print(crc.compute(113, 0).item())
 lf = LinearFeaturesWithOne()
 #defining the critic
 dt = 0.001
+env.dt = dt
 alpha_critic = 0.0001
 gamma = 1.0#1.0#0.999 was stabler#Jan Peters says gamma < 1 destroys learning performance
 lfc = LinearFeaturesNACCritic(env, dt, DEBUG)
@@ -62,7 +63,7 @@ alpha_actor = 0.0001
 lfga = LinearFeaturesGaussianNACActor(env, dt, DEBUG)
 actor_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
 print("Initial Actor: " + str(actor_init))
-T = 1000 * dt
+T = 200 * dt
 lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, state_init)
 
 
@@ -72,16 +73,17 @@ use_euler = False#False means Runge-Kutta
 no_iterations = 100
 no_episodes = 10
 max_episode_length = int(np.round(T/dt, 1))
+print(dt, T, no_iterations, no_episodes, max_episode_length)
 if(no_episodes < feature_size):
-    print("Natural Actor Critic requires no of episodes at least equal" + 
-          " or greater than 1 + 1 + no of policy_parameters. If w doesn't" +
-          " converge fast, it requires more.")
+    print("\nERROR: Natural Actor Critic requires no of episodes at least equal" + 
+          "\n or greater than 1 + 1 + no of policy_parameters. If w doesn't" +
+          "\n converge in the very first attempt, it requires more.")
     sys.exit()
 lfga.optimize(no_iterations, no_episodes, max_episode_length, use_euler = use_euler)
 #lfga.plot()#?
 #lfga.plot_vel()
 #lfga.plot_torque()
-#lfga.plot_episode_cost(0.997)
+lfga.plot_episode_cost(0.997)
 #lfc.plot_policy()
 lfga.plot_policy()
 

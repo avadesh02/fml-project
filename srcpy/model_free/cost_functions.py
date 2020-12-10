@@ -66,7 +66,7 @@ class QuadraticTerminalCost:
         #if self.istimeinvariant:
         if(abs(state[0] - self.x_nom[0]) < 0.1 and abs(state[1] - self.x_nom[1]) < 0.1):
             print("\n\n\nYay, reached the terminal state\n\n\n")
-            return -1000000
+            return -10000
         else:
             return 0
 

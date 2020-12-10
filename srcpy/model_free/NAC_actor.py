@@ -168,19 +168,21 @@ class LinearFeaturesGaussianNACActor:
                             if(self.DEBUG):
                                 print("finished pass {} and the cost is {}\n".format(step, self.cost_arr[-1]))
                         state = np.array(self.env.get_state(), dtype=object)
-                        if(abs(state[0] - 2) > 4 or abs(state[1]) > 10):
+                        if(abs(state[0] - 2) > 4 or abs(state[1]) > 1000):
                             print("Out of bounds. Ending episode " + str(episode) + " in step (index)" + str(step))
                             break
                         if (self.cost.terminal_cost != None):
-                            if self.cost.terminal_cost.compute(state, self.env.t) < -1000:
+                            if self.cost.terminal_cost.compute(state, self.env.t) < -1000:#NEED TO BE REMOVED SOME TIME. XXXXXXXXXXXXXXXXXX
                                 episode_executed = 1
                                 print("Episode " + str(episode) + " successfully executed in steps " + str(steps_taken + 1))
-                    episode_executed = 1
+                    episode_executed = 1#NEED TO BE REMOVED SOME TIME. XXXXXXXXXXXXXXXXXX
                 steps_taken += 1
                 self.episode_cost_arr_index += 1
                 
                 #Episode level forward pass
                 episode_cost = sum(self.cost_arr[self.cost_arr_index_prev: self.cost_arr_index])
+                #assertion fails some times only. ????????????????!!!!!!!!!!!!!!!!!
+                assert(steps_taken == self.cost_arr_index - self.cost_arr_index_prev)
                 episode_discounted_cost = np.dot(np.power(self.gamma, np.array(range(steps_taken))),
                                                  np.array(self.cost_arr[self.cost_arr_index_prev: self.cost_arr_index]))
                 episode_discounted_log_gradient = np.dot(np.power(self.gamma, np.array(range(steps_taken))),
@@ -226,7 +228,7 @@ class LinearFeaturesGaussianNACActor:
                     if(cosine_similarity > 0.9998 and episode > self.parameters_size):
                         #cos(1) = 0.9998, cos(2) = 0.9994, cos(5) = 0.9962, cos(10) = 0.9848
                         w_convergence += 1
-                        print("In iteration " + str(iteration) +", w converged in " + str(episode) + " episodes ")
+                        print("In iteration " + str(iteration) +", w converged in " + str(episode + 1) + " episodes ")
                         #The update to the actor (policy)
                         self.parameters = self.parameters + self.alpha * w
                         self.parameters_history.append(self.parameters)
