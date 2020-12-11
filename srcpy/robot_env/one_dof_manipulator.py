@@ -41,7 +41,7 @@ class OneDOFManipulator:
             torque : torque applied at the end of manipulator
         '''
         
-        return np.round(theta_dot,3), np.round((torque - self.m*self.g*np.sin(theta))/self.I,3)
+        return np.round(theta_dot,3), np.round((torque - self.m*self.g*self.length*np.sin(theta))/self.I,3)
     
     def integrate_dynamics_euler(self, theta_t, theta_dot_t, torque_t):
         '''
@@ -109,8 +109,8 @@ class OneDOFManipulator:
             torque : torque applied at the end of manipulator
         '''
         A_lin = np.identity(2)
-        A_lin[0,1] = dt
-        A_lin[1,0] = -np.round(self.m*self.g*dt*np.cos(state[0])/self.I, 2)
+        A_lin[0,1] += dt
+        A_lin[1,0] += -np.round(self.m*self.g*self.length*dt*np.cos(state[0])/self.I, 2)
 
         return A_lin
 
@@ -125,6 +125,16 @@ class OneDOFManipulator:
         B_lin[1] = dt/self.I 
 
         return B_lin
+
+    def dynamics_xx(self, state, torque, dt):
+        '''
+        Returns the hessian of the dynamics with respect to states (fxx)
+        Input:
+            state : [joint position  joint velocity]
+            torque : torque applied at the end of manipulator
+        '''
+        A_xx = np.zeros((2,2,2))
+        # A_xx[1,1,1] = self.m*self.g*s
 
     def reset_manipulator(self, initial_theta, initial_theta_dot):
         '''

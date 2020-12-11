@@ -35,8 +35,11 @@ crc = ControlRegularizerCost(env, R_t)
 dt = 0.01
 T = 2
 no_iterations = 20
+
+u_init = 3e+2*np.ones((1,np.int(np.round(T/dt,2))))
+
 ilqr = ILQR(env, dt)
-ilqr.initialize(T, x_init)
+ilqr.initialize(T, x_init, u_init)
 env.dt = dt
 # adding cost
 ilqr.add_running_cost(ptc)
