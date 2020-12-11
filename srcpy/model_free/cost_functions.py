@@ -38,7 +38,8 @@ class QuadraticCost:
         #if(abs(state[0] - self.x_nom[0]) < 0.001 and abs(state[1] - self.x_nom[1]) < 0.001):
          #   return -100000
         #if self.istimeinvariant:
-        return 0.5*np.matmul(np.matmul((state - self.x_nom), self.Q), np.matrix(state - self.x_nom).transpose())
+        return 0.5*np.matmul(np.matmul((state - self.x_nom), self.Q),
+                              np.matrix(state - self.x_nom).transpose())
     
 class QuadraticTerminalCost:
 
@@ -65,7 +66,7 @@ class QuadraticTerminalCost:
          #   return -100000
         #if self.istimeinvariant:
         if(abs(state[0] - self.x_nom[0]) < 0.1 and abs(state[1] - self.x_nom[1]) < 0.1):
-            print("\n\n\nYay, reached the terminal state\n\n\n")
+            #print("\n\n\nYay, reached the terminal state\n\n\n")
             return -10000
         else:
             return 0

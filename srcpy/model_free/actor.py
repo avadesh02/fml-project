@@ -94,7 +94,7 @@ class LinearFeaturesGaussianActor:
         if(self.DEBUG):
             print("reward: {}".format(reward))
         #self.env.step_manipulator(float(action), use_euler = use_euler)
-        self.env.step_double_integrator(float(action))
+        self.env.step(float(action))
         #jp_new, jp_d_new = self.env.get_joint_state()
         jp_new, jp_d_new = self.env.get_state()
         state_new = np.array([jp_new, jp_d_new], dtype=object)
@@ -122,7 +122,7 @@ class LinearFeaturesGaussianActor:
             print("Policy parameters: {}".format(self.parameters))
         self.factor *= self.gamma
 
-    def optimize(self, no_iterations = 10, no_episodes = 1, use_euler = True):
+    def optimize(self, max_episode_length = 10, no_episodes = 1, use_euler = True):
         '''
         This function runs the forward and the backward pass for the policy (gradient) model
         '''
@@ -135,7 +135,7 @@ class LinearFeaturesGaussianActor:
             #new_init_vel = np.random.uniform(-radians(2.),radians(2.))
             self.env.reset_state(new_init_theta, new_init_vel)
             iter = 0
-            for n in range(no_iterations):
+            for n in range(max_episode_length):
                 iter = n
                 self.forward_pass(use_euler)
                 #reward = self.forward_pass()
@@ -149,14 +149,14 @@ class LinearFeaturesGaussianActor:
                 #state = np.array(self.env.get_joint_state(), dtype=object)
                 state = np.array(self.env.get_state(), dtype=object)
                 #if(abs(state[0] - radians(90)) > radians(2) or abs(state[1]) > 100):
-                if(abs(state[0] - 2) > 4 or abs(state[1]) > 10):
-                    print("Out of bounds. Ending iteration in episode " + str(episode))
+                if(abs(state[0] - 2) > 4 or abs(state[1]) > 1000):
+                    print("Out of bounds. Ending step " + str(n) + " in episode " + str(episode))
                     break
             episode_cost = sum(self.cost_arr[self.cost_arr_index_prev: self.cost_arr_index])
             self.episode_cost_arr.append(episode_cost)
             if(episode %1 == 0):
                 #print("Episode {} ({}, {})\t: done with cost {} \tin iterations {}.".format(episode, new_init_theta - radians(90), new_init_vel, episode_cost, iter+1))
-                print("Episode {} ({}, {})\t: done with cost {} \tin iterations {}.".format(episode, new_init_theta, new_init_vel, episode_cost, iter+1))
+                print("Episode {} ({}, {}): done with cost {} \tin steps {}.".format(episode, new_init_theta, new_init_vel, episode_cost, iter+1))
     def plot(self):  
         plt.plot((180.0/np.pi)*self.state_history[0], label = "trajectory")
         plt.grid()

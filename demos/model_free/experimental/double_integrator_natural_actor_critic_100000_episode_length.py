@@ -46,8 +46,7 @@ print(crc.compute(113, 0).item())
 #defining the features
 lf = LinearFeaturesWithOne()
 #defining the critic
-dt = 0.1
-env.dt = dt
+dt = 0.001
 alpha_critic = 0.0001
 gamma = 1.0#1.0#0.999 was stabler#Jan Peters says gamma < 1 destroys learning performance
 lfc = LinearFeaturesNACCritic(env, dt, DEBUG)
@@ -55,35 +54,46 @@ print(state_init)
 print(lf.get_s_features(state_init))
 feature_size = len(lf.get_s_features(state_init))
 print(feature_size)
-critic_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
+#critic_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
+critic_init = [ 0.01171503,  0.02650005, -0.05462099]
 print("Initial Critic: " + str(critic_init))
 lfc.initialize(alpha_critic, gamma, critic_init, lf)
 #defining the actor
 alpha_actor = 0.0001
 lfga = LinearFeaturesGaussianNACActor(env, dt, DEBUG)
-actor_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
+#actor_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
+actor_init = [-0.04904908,  0.00031525, -0.16831878]
 print("Initial Actor: " + str(actor_init))
-T = 200 * dt
+#WIth T=100000, iter = 1, episodes = 5, and
+#Initial Critic: [ 0.01171503  0.02650005 -0.05462099]
+#Initial Actor: [-0.04904908  0.00031525 -0.16831878]
+#It was converging well. See plots in the folder.
+T = 1000000 * dt
 lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, state_init)
 
 
 #Optimizing the RL model
 #Should convert to episodic
 use_euler = False#False means Runge-Kutta
-no_iterations = 5003
-no_episodes = 10
+no_iterations = 1
+no_episodes = 5
 max_episode_length = int(np.round(T/dt, 1))
-print(dt, T, no_iterations, no_episodes, max_episode_length)
 if(no_episodes < feature_size):
     print("\nERROR: Natural Actor Critic requires no of episodes at least equal" + 
           "\n or greater than 1 + 1 + no of policy_parameters. If w doesn't" +
           "\n converge in the very first attempt, it requires more.")
     sys.exit()
 lfga.optimize(no_iterations, no_episodes, max_episode_length, use_euler = use_euler)
+#lfga.plot()#?
+#lfga.plot_vel()
+#lfga.plot_torque()
+lfga.plot_episode_cost(0.997)
+#lfc.plot_policy()
+#lfga.plot_policy()
 
-print("\nSimulation based on the learned model:")
+print("Simulation based on the learned model:\n")
 # simulating controller
-simulation_T = 10 * dt
+simulation_T = 100 * dt
 horizon = int(np.round(simulation_T/dt, 1)) # duration of simulation steps
 for t in range(horizon):
     #jp = env.get_joint_position()
@@ -94,21 +104,5 @@ for t in range(horizon):
     #env.step_manipulator(float(torque), use_euler = use_euler)
     env.step_double_integrator(float(torque))
 
-
-print("Initial Actor: " + str(actor_init))
-print("Final Actor: " + str(lfga.parameters))
-print("Actor norm ratio: " + str(np.linalg.norm(lfga.parameters[0:lfga.parameters_size - 1]) / np.linalg.norm(np.array(actor_init[0:lfga.parameters_size - 1]))))
-
-print("T=", max_episode_length, "*dt, dt=", dt, ", iter=", no_iterations, ", epis=", no_episodes, ",gamma=", gamma, ",start=,sigma=", "- DI - end position")
-
-#lfga.plot()#?
-#lfga.plot_vel()
-#lfga.plot_torque()
-lfga.plot_end_position()
-lfga.plot_episode_cost(0.997)
-
-env.animate(50)
+#env.animate(50)
 env.plot()
-
-#lfc.plot_policy()
-lfga.plot_policy()

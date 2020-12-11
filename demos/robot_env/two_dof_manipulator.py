@@ -21,5 +21,5 @@ for t in range(horizon):
     tau2 = 0
     env.step_manipulator(tau1, tau2)
 
-# env.animate()
-# env.plot()
+env.animate()
+env.plot()
