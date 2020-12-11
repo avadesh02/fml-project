@@ -192,6 +192,9 @@ class OneDOFManipulator:
         # incrementing time
         self.t += 1
         
+    def step(self, torque, use_euler=True):
+        self.step_manipulator(torque, use_euler)
+        
     def get_joint_position(self):
         '''
         This function returns the current joint position (degrees) of the mainpulator
@@ -206,6 +209,9 @@ class OneDOFManipulator:
     
     def get_joint_state(self):
         return self.sim_data[:,self.t][0:2]
+    
+    def get_state(self):
+        return self.get_joint_state()
     
     def animate(self, freq = 100):
         

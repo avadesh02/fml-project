@@ -23,6 +23,7 @@ class LinearFeaturesGaussianNACActor:
         self.episode_discounted_cost_arr = []#stores discounted cost after each episode
         self.episode_discounted_log_gradient_arr = []#for each episode
         self.episode_end_position = []
+        self.episode_end_angle = []
         self.parameters_history = []
 
     def initialize(self, T, alpha, gamma, critic, policy_parameters, features_generator, cost, state_init = None):
@@ -58,26 +59,25 @@ class LinearFeaturesGaussianNACActor:
         state_features = self.features_generator.get_s_features(state)
         if(self.DEBUG):
             print("state features: {}".format(state_features))
-        mu = np.dot(self.parameters[0:self.parameters_size - 1], state_features[0:self.parameters_size - 1])
-        sigma=1
-        #sigma = exp(np.dot(self.parameters[1], state_features))#float?
-        #print("log sigma: {}".format(np.dot(self.parameters[1], state_features)))
+        mu = np.dot(self.parameters[0:self.parameters_size - 2], state_features[0:self.parameters_size - 2])
+        self.parameters[self.parameters_size -2]
+        eta = self.parameters[self.parameters_size -2]
+        try:
+            exp_eta = exp(eta)
+        except OverflowError:
+            exp_eta = float('inf')#https://stackoverflow.com/questions/4050907/python-overflowerror-math-range-error
+        sigma = 0.1 + 1/(1+exp_eta)
         action = np.random.normal(mu, sigma)
         if(self.DEBUG):
             print("Mu: {}, Sigma: {}, action: {}".format(mu, sigma, action))
-        #if(self.cost_arr_index % 1000 == 0):
-        #action = max(-self.torque_limit, min(action, self.torque_limit))#clipping
-        #if(self.DEBUG):
-            #print("Torque: {}".format(action))
-        #state_action_features = self.features_generator.get_sa_features(state, action)
-        #print("S-A Features: {}".format(state_action_features))
-        # Sigma going down to 0 is a real problem in stochastic policies it seems.
-        #epsilon can be a function of I, l
         if(abs(sigma) <  0.0001):#clipping of sorts
             pass #grad_log_prob = mu #bug this one
         else:
             grad_log_prob = np.multiply(state_features, 
                                     (1/(sigma ** 2) * (action - mu)) )
+        d_sigma_d_eta = - exp_eta / ((1+exp_eta) ** 2)
+        d_log_pi_d_eta = (d_sigma_d_eta / sigma) *((((action - mu) / sigma) ** 2) - 1)
+        grad_log_prob = np.insert(grad_log_prob, self.parameters_size - 2, d_log_pi_d_eta, 0)
         if(self.DEBUG):
             print("Grad log prob: {}".format(grad_log_prob))
         return action, grad_log_prob
@@ -88,10 +88,8 @@ class LinearFeaturesGaussianNACActor:
         '''
         t = self.env.t
         #jp, jp_d = self.env.get_joint_state()
-        jp, jp_d = self.env.get_state()
-        state = np.array([jp, jp_d], dtype=object)#line can be merged with line above.
-        if(self.DEBUG):
-            print("State: {}".format(state))
+        jp, jp_d,theta, theta_d = self.env.get_state()
+        state = np.array([jp, jp_d,theta, theta_d], dtype=object)#line can be merged with line above.
         action, self.grad_log_prob = self.sample_action(state)#will have more dim for 2-DoF & others
         #self.action_history[:,t] = action
         if(self.cost.intermediate_cost != None):
@@ -109,10 +107,12 @@ class LinearFeaturesGaussianNACActor:
         if(self.DEBUG):
             print("reward: {}".format(reward))
         #self.env.step_manipulator(float(action), use_euler = use_euler)
-        self.env.step_double_integrator(float(action))
+        self.env.step(float(action))
+        if(self.DEBUG):
+            print("State shifted to: {}".format(state))
         #jp_new, jp_d_new = self.env.get_joint_state()
-        jp_new, jp_d_new = self.env.get_state()
-        state_new = np.array([jp_new, jp_d_new], dtype=object)
+        #jp_new, jp_d_new, theta_new, theta_d_new = self.env.get_state()
+        #state_new = np.array([jp_new, jp_d_new, theta_new, theta_d_new], dtype=object)
         #print("t: {}, self.env.t: {}".format(t, self.env.t))
         #self.state_history[:,t+1] = jp_new, jp_d_new#t+1 is the new self.env.t
         #self.critic.forward_pass(state, action, state_new, reward)
@@ -157,9 +157,11 @@ class LinearFeaturesGaussianNACActor:
                 episode_executed = 0
                 while episode_executed == 0:
                     self.cost_arr_index_prev = self.cost_arr_index
-                    new_init_theta = 0#name has to change
+                    new_init_x = 0
+                    new_init_theta = radians(150.0)#name has to change
                     new_init_vel = 0
-                    self.env.reset_state(new_init_theta, new_init_vel)
+                    new_init_theta_vel = 0.0
+                    self.env.reset_state(new_init_x, new_init_theta, new_init_vel, new_init_theta_vel)
                     steps_taken = 0
                     for step in range(max_episode_length):
                         if episode_executed == 1:
@@ -172,7 +174,8 @@ class LinearFeaturesGaussianNACActor:
                         if(self.DEBUG):
                             print("Policy parameters: {}".format(self.parameters))
                         state = np.array(self.env.get_state(), dtype=object)
-                        if(abs(state[0] - 2) > 4 or abs(state[1]) > 1000):
+                        if(abs(state[1] - radians(180)) > radians(60) or abs(state[0] - 0) > 1000 or 
+                           abs(state[3] > 1000 or abs(state[2]) > 1000)):
                             if(self.DEBUG):
                                 print("Out of bounds. Ending episode " + str(episode) + " in step (index)" + str(step))
                             break
@@ -182,7 +185,8 @@ class LinearFeaturesGaussianNACActor:
                                 episode_success += 1
                                 if(self.DEBUG):
                                     print("Episode " + str(episode) + " successfully executed in steps " + str(steps_taken + 1))
-                        #print("\n")
+                        if(self.DEBUG):
+                            print("\n")
                     episode_executed = 1#NEED TO BE REMOVED SOME TIME. XXXXXXXXXXXXXXXXXX
                 steps_taken += 1
                 self.episode_cost_arr_index += 1
@@ -197,6 +201,7 @@ class LinearFeaturesGaussianNACActor:
                                                  np.array(self.log_gradient_arr[self.cost_arr_index_prev: self.cost_arr_index]))
                 self.episode_cost_arr.append(episode_cost)
                 self.episode_end_position.append(state[0])
+                self.episode_end_angle.append(state[1])
                 self.episode_discounted_cost_arr.append(episode_discounted_cost)
                 self.episode_discounted_log_gradient_arr.append(episode_discounted_log_gradient)
                 #if(episode %100000 == 0):
@@ -227,9 +232,10 @@ class LinearFeaturesGaussianNACActor:
                     #For over-determined systems, linalg.solve doesn't use pseudo inverse automatically.
                     #Need to use pinv()
                     #https://hadrienj.github.io/posts/Deep-Learning-Book-Series-2.9-The-Moore-Penrose-Pseudoinverse/
+                    #print(basis_functions)
                     basis_functions_moore_penrose_pseudoinverse = np.linalg.pinv(basis_functions)
                     w = np.dot(basis_functions_moore_penrose_pseudoinverse, reward_statistics)
-                    if(self.DEBUG > 0):
+                    if(self.DEBUG):
                         print("w: " + str(w))
                     w_trimmed = w[0:self.parameters_size - 1]#Cutting out J
                     #print("w_trimmed: " + str(w_trimmed))
@@ -281,6 +287,13 @@ class LinearFeaturesGaussianNACActor:
     def plot_end_position(self):
         x = np.linspace(0, len(self.episode_end_position) - 1, len(self.episode_end_position))
         plt.scatter(x, self.episode_end_position, label = "End position of Episode")
+        plt.grid()
+        plt.legend()
+        plt.show()
+        
+    def plot_end_angle(self):
+        x = np.linspace(0, len(self.episode_end_angle) - 1, len(self.episode_end_angle))
+        plt.scatter(x, self.episode_end_angle, label = "End angle of Episode")
         plt.grid()
         plt.legend()
         plt.show()

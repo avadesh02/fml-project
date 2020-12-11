@@ -128,6 +128,9 @@ class DoubleIntegrator:
         # incrementing time
         self.t += 1
         
+    def step(self, f_t):
+        return self.step_double_integrator(f_t)
+        
     def get_position(self):
         '''
         This function returns the location of the block at current time step

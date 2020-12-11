@@ -46,7 +46,7 @@ print(crc.compute(113, 0).item())
 #defining the features
 lf = LinearFeatures()#may have to pass env?
 #defining the critic
-dt = 0.001
+dt = 0.01
 alpha_critic = 0.0001
 gamma = 0.999#1.0
 lfc = LinearFeaturesCritic(env, dt, DEBUG)
@@ -66,16 +66,16 @@ alpha_actor = 0.0001
 lfga = LinearFeaturesGaussianActor(env, dt, DEBUG)
 actor_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
 print("Initial Actor: " + str(actor_init))
-T = 20000 * dt
+T = 300 * dt
 lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, state_init)
 
 
 #Optimizing the RL model
 #Should convert to episodic
 use_euler = False#False means Runge-Kutta
-no_iterations = int(np.round(T/dt, 1))
-no_episodes = 10
-lfga.optimize(no_iterations, no_episodes, use_euler = use_euler)
+max_episode_length = int(np.round(T/dt, 1))
+no_episodes = 700
+lfga.optimize(max_episode_length, no_episodes, use_euler = use_euler)
 #lfga.plot()#?
 #lfga.plot_vel()
 #lfga.plot_torque()

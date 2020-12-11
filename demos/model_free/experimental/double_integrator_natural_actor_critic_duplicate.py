@@ -46,7 +46,7 @@ print(crc.compute(113, 0).item())
 #defining the features
 lf = LinearFeaturesWithOne()
 #defining the critic
-dt = 0.1
+dt = 0.01
 env.dt = dt
 alpha_critic = 0.0001
 gamma = 1.0#1.0#0.999 was stabler#Jan Peters says gamma < 1 destroys learning performance
@@ -70,7 +70,7 @@ lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, stat
 #Optimizing the RL model
 #Should convert to episodic
 use_euler = False#False means Runge-Kutta
-no_iterations = 5003
+no_iterations = 200
 no_episodes = 10
 max_episode_length = int(np.round(T/dt, 1))
 print(dt, T, no_iterations, no_episodes, max_episode_length)
@@ -80,10 +80,16 @@ if(no_episodes < feature_size):
           "\n converge in the very first attempt, it requires more.")
     sys.exit()
 lfga.optimize(no_iterations, no_episodes, max_episode_length, use_euler = use_euler)
+#lfga.plot()#?
+#lfga.plot_vel()
+#lfga.plot_torque()
+lfga.plot_episode_cost(0.997)
+#lfc.plot_policy()
+lfga.plot_policy()
 
-print("\nSimulation based on the learned model:")
+print("Simulation based on the learned model:\n")
 # simulating controller
-simulation_T = 10 * dt
+simulation_T = 100 * dt
 horizon = int(np.round(simulation_T/dt, 1)) # duration of simulation steps
 for t in range(horizon):
     #jp = env.get_joint_position()
@@ -94,21 +100,5 @@ for t in range(horizon):
     #env.step_manipulator(float(torque), use_euler = use_euler)
     env.step_double_integrator(float(torque))
 
-
-print("Initial Actor: " + str(actor_init))
-print("Final Actor: " + str(lfga.parameters))
-print("Actor norm ratio: " + str(np.linalg.norm(lfga.parameters[0:lfga.parameters_size - 1]) / np.linalg.norm(np.array(actor_init[0:lfga.parameters_size - 1]))))
-
-print("T=", max_episode_length, "*dt, dt=", dt, ", iter=", no_iterations, ", epis=", no_episodes, ",gamma=", gamma, ",start=,sigma=", "- DI - end position")
-
-#lfga.plot()#?
-#lfga.plot_vel()
-#lfga.plot_torque()
-lfga.plot_end_position()
-lfga.plot_episode_cost(0.997)
-
 env.animate(50)
 env.plot()
-
-#lfc.plot_policy()
-lfga.plot_policy()

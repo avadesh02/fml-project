@@ -19,7 +19,7 @@ from model_free.critic import *
 from model_free.features import *
 
 
-DEBUG = 1
+DEBUG = 0
 
 # initialising the env
 env = OneDOFManipulator(1, 0.1)
@@ -35,7 +35,7 @@ Q_t = 10*np.identity(2)
 Q_f = 1e+1*np.identity(2)
 R_t = 1e-4
 qc = QuadraticCost(env, state_terminal, Q_t)#as of now, keeping this time-invariant Q_t
-terminal_qc = QuadraticCost(env, state_terminal, Q_f)
+terminal_qc = QuadraticTerminalCost(env, state_terminal, Q_f)
 crc = ControlRegularizerCost(env, R_t)
 costs_combined = Cost()
 costs_combined.initialize(terminal_qc, qc, crc)
@@ -65,9 +65,9 @@ lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, stat
 #Optimizing the RL model
 #Should convert to episodic
 use_euler = False#False means Runge-Kutta
-no_iterations = int(np.round(T/dt, 1))
+max_episode_length = int(np.round(T/dt, 1))
 no_episodes = 1000
-lfga.optimize(no_iterations, no_episodes, use_euler = use_euler)
+lfga.optimize(max_episode_length, no_episodes, use_euler = use_euler)
 #lfga.plot()#?
 #lfga.plot_vel()
 #lfga.plot_torque()

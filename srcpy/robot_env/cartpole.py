@@ -114,6 +114,16 @@ class Cartpole:
         self.sim_data = np.array([[init_x], [init_theta], [init_xd], [init_theta_d], [0.0]])
         self.t = 0 # time step counter in mili seconds
 
+    def reset_state(self, init_x, init_theta, init_xd, init_theta_d):
+        '''
+        This function resets the system to initial position without resetting history
+        Input:
+            new initial state
+        '''
+        sim_data_t_1 = np.array([[init_x], [init_theta], [init_xd], [init_theta_d], [0.0]])
+        self.sim_data = np.concatenate((self.sim_data, sim_data_t_1), axis = 1)
+        self.t += 1
+
     def step_cartpole(self, actions):
         '''
         This function simlates the system
@@ -130,12 +140,21 @@ class Cartpole:
         self.sim_data[1] = np.sign(self.sim_data[1])*(abs(self.sim_data[1])%(2*np.pi))
         
         self.t += 1
+        
+    def step(self, actions):
+        self.step_cartpole(actions)
 
     def get_states(self):
         '''
         This function returns the state of the system at the current time step
         '''
         return self.sim_data[:,self.t][0:4]
+    
+    def get_state(self):
+        '''
+        This function returns the state of the block at current time step
+        '''
+        return self.get_states()
 
     def animate(self, freq = 25):
         
