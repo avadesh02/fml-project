@@ -57,7 +57,7 @@ for l in l_rate:
 
             # Render Animation - Also needs to change w.r.t. custom env
             if (e>1000 and e%100==0):
-                env.render('rgb_array')
+                env.render()
             #env.render()
 
             # Assign probabilities w.r.t. current state and weights
