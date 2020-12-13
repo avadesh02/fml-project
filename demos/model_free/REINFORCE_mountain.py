@@ -7,16 +7,14 @@ import matplotlib.pyplot as plt
 import copy 
 import statistics as stats
 
-#-todo- Need to import robot_env to replace gym
-
 epochs = 120
 alpha = 0.0015
 gamma = 0.99
 
 # Initialize environment and weights
-env = gym.make('MountainCar-v0') #-todo- Needs to change w.r.t. custom env
+env = gym.make('MountainCar-v0') 
 env._max_episode_steps = 1000
-nA = 3 #-todo- Needs to change w.r.t. custom env
+nA = 3 
 nS = 2
 np.random.seed(1)
 w = np.random.rand(nS,nA)
@@ -32,21 +30,11 @@ def softmax_grad(softmax):
     s = softmax.reshape(-1,1)
     return np.diagflat(s) - np.dot(s, s.T)
 
-def reward_test(state):
-    # Adjust reward based on car position
+def get_reward(state):
     reward = state[0] + 0.5
-# Adjust reward for task completion
     if state[0] >= 0.5:
         reward += 1
     return reward
-
-def get_reward(state):
-    if state[0] >= 0.5:
-        print("Car has reached the goal")
-        return 10
-    if state[0] > -0.4:
-        return (1+state[0])**2
-    return 0
 
 # Incrementatl learning rates
 l_rate = [0.0025]
@@ -68,8 +56,8 @@ for l in l_rate:
         #w = np.random.rand(nS,nA)
         while True:
 
-            # Render Animation - Also needs to change w.r.t. custom env
-            if ( e>100):
+            # Render Animation
+            if (e>100):
                 env.render()
             #env.render()
 
@@ -79,12 +67,12 @@ for l in l_rate:
             # Choose action with non-uniform randomness w.r.t. probabilities of each action at current state
             action = np.random.choice(nA,p=probs[0])
             # Get next state, reward and game status based on the action taken 
-            next_state,reward,done,_ = env.step(action) #-todo- Needs to change w.r.t. custom env
+            next_state,reward,done,_ = env.step(action) 
             if(next_state[0] >= 0.5):
                 print(next_state[0])
                 print("Car has reached the goal\n")
                 #env.render()
-            reward = reward_test(next_state)
+            reward = get_reward(next_state)
             max_h = max(max_h,next_state[0])
             next_state = next_state[None,:]
 
