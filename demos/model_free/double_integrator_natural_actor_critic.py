@@ -63,15 +63,15 @@ alpha_actor = 0.0001
 lfga = LinearFeaturesGaussianNACActor(env, dt, DEBUG)
 actor_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
 print("Initial Actor: " + str(actor_init))
-T = 200 * dt
+T = 50 * dt
 lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, state_init)
 
 
 #Optimizing the RL model
 #Should convert to episodic
 use_euler = False#False means Runge-Kutta
-no_iterations = 5003
-no_episodes = 10
+no_iterations = 10000
+no_episodes = 15
 max_episode_length = int(np.round(T/dt, 1))
 print(dt, T, no_iterations, no_episodes, max_episode_length)
 if(no_episodes < feature_size):
@@ -83,7 +83,7 @@ lfga.optimize(no_iterations, no_episodes, max_episode_length, use_euler = use_eu
 
 print("\nSimulation based on the learned model:")
 # simulating controller
-simulation_T = 10 * dt
+simulation_T = 100 * dt
 horizon = int(np.round(simulation_T/dt, 1)) # duration of simulation steps
 for t in range(horizon):
     #jp = env.get_joint_position()

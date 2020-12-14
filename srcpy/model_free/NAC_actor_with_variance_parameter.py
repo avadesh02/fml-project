@@ -254,7 +254,7 @@ class LinearFeaturesGaussianNACActor:
                     else:
                         #more episodes.
                         pass
-        print("episode succeeded", episode_success, "times out of", self.episode_cost_arr_index, "episodes")
+        print("\nEpisode succeeded", episode_success, "times out of", self.episode_cost_arr_index, "episodes")
         print("w converged " + str(w_convergence) + " times out of " + str(no_iterations) + " iterations")
                     
     def plot(self):  

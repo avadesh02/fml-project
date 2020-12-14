@@ -63,7 +63,8 @@ class LinearFeaturesWithOneCartpole:
         
     def get_s_features(self, state):
         #features = [state[0], state[1] - math.radians(180), state[2], state[3]]
-        features = [state[0], math.radians(180) - state[1], -state[2], -state[3]]#Section 4.1 of the NAC paper
+        #features = [state[0], math.radians(180) - state[1], -state[2], -state[3]]#Section 4.1 of the NAC paper#-state[2]????
+        features = [state[0], math.radians(180) - state[1], state[2], -state[3], state[0]*math.radians(180) - state[1]]#Section 4.1 of the NAC paper]
         features.append(1.0)
         return features
         #return features.append(1.0) #returned None

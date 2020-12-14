@@ -238,7 +238,9 @@ class LinearFeaturesGaussianNACActor:
                     if(cosine_similarity > 0.9998 and episode > self.parameters_size):
                         #cos(1) = 0.9998, cos(2) = 0.9994, cos(5) = 0.9962, cos(10) = 0.9848
                         w_convergence += 1
-                        print("In iteration " + str(iteration) +", w converged in " + str(episode + 1) + " episodes ")
+                        if(iteration%20 == 0):
+                            print("In iteration " + str(iteration) +", w converged in " + str(episode + 1) + " episodes ")
+                            print("J = " + str(w[self.parameters_size-1]))
                         #The update to the actor (policy)
                         self.parameters = self.parameters + self.alpha * w
                         self.parameters_history.append(self.parameters)
