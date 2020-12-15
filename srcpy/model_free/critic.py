@@ -48,11 +48,13 @@ class LinearFeaturesCritic:
         This function runs the forward pass for the critic
         '''
         #self.gradient = []
+        #TD(0) step
         self.delta = reward - self.get_value(state) + self.gamma* self.get_value(state_new)
         if(self.DEBUG):
             print("Delta: {}".format(self.delta))
     
     def backward_pass(self, state):
+        #TD(0) step
         self.parameters = self.parameters + np.multiply(self.get_grad_value(state), self.alpha * self.delta)
         self.parameters_history.append(self.parameters)
         if(self.DEBUG):

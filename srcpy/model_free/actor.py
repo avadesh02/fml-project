@@ -113,9 +113,7 @@ class LinearFeaturesGaussianActor:
         # plt.show()
     
     def backward_pass(self):
-        #state = np.array(self.env.get_joint_state(), dtype=object)
         delta = self.critic.backward_pass(self.old_state)
-        #print(self.parameters)
         self.parameters = self.parameters + self.alpha * self.factor * delta * self.grad_log_prob#backward pass?
         self.parameters_history.append(self.parameters)
         if(self.DEBUG):

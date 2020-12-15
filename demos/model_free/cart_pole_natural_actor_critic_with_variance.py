@@ -20,12 +20,12 @@ from model_free.NAC_critic import *
 from model_free.features import *
 
 
-DEBUG = 1
-#env = Cartpole(5, 1, 5)
-env = Cartpole(1.0, 0.15, 0.75)#From section 4.1 of the NAC paper
+DEBUG = 0
+env = Cartpole(5, 5, 5)
+#env = Cartpole(1.0, 0.15, 0.75)#From section 4.1 of the NAC paper
 
 init_x = 0
-init_theta = radians(150)
+init_theta = radians(160)
 init_xd = 0
 init_theta_d = 0
 
@@ -66,28 +66,30 @@ gamma = 1.0#1.0#0.999 was stabler#Jan Peters says gamma < 1 destroys learning pe
 lfc = LinearFeaturesNACCritic(env, dt, DEBUG)
 print(state_init)
 print(lf.get_s_features(state_init))
+print(lf.get_s_features(np.array([1, 2.3, 0.5, 20])))
 feature_size = len(lf.get_s_features(state_init))
 print(feature_size)
 critic_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
 print("Initial Critic: " + str(critic_init))
 lfc.initialize(alpha_critic, gamma, critic_init, lf)
 #defining the actor
-alpha_actor = 0
+alpha_actor = 0.01
 lfga = LinearFeaturesGaussianNACActor(env, dt, DEBUG)
 actor_init = np.random.normal(0.,100,feature_size + 1)#np.array([0.0, 0.0, 0.0, 0.0])
+actor_init[feature_size - 1] = np.random.normal(1., 0.1, 1)#eta can't be big in the beginning
 # +1 For the sake of eta parameter of section 4.1 of the paper
 #actor_init = np.array([5.5, 10.0, -80.0, -20.0, 10.0, 1.0])#With eta = 1000, SVD didn't converge
-actor_init = np.array([5.71, 11.3, -82.1, -21.6, 100.0, 1.0])
+#actor_init = np.array([5.71, 11.3, -82.1, -21.6, 100.0, 1.0])
 print("Initial Actor: " + str(actor_init))
-T = 200 * dt
+T = 100 * dt
 lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, state_init)
 
 
 #Optimizing the RL model
 #Should convert to episodic
 use_euler = False#False means Runge-Kutta
-no_iterations = 2
-no_episodes = 5
+no_iterations = 10000
+no_episodes = 20
 max_episode_length = int(np.round(T/dt, 1))
 print(dt, T, no_iterations, no_episodes, max_episode_length)
 if(no_episodes < feature_size):
@@ -110,12 +112,12 @@ for t in range(horizon):
 
 
 print("\n\nInitial Actor: " + str(actor_init))
-print("Final Actor: " + str(lfga.parameters))
+print("Final Actor: " + str((lfga.parameters).tolist()))
 print("Actor norm ratio: " + str(np.linalg.norm(lfga.parameters[0:lfga.parameters_size - 1]) / np.linalg.norm(np.array(actor_init[0:lfga.parameters_size - 1]))))
 
 print("T=", max_episode_length, "*dt, dt=", dt, ", iter=", no_iterations, 
       ", epis=", no_episodes, ",gamma=", gamma, ",alpha=", alpha_actor, ",start=,sigma=", 
-      "- CP - end position")
+      "- CP - end ANGLE")
 
 #lfga.plot()#?
 #lfga.plot_vel()
