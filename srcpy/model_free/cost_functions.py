@@ -43,7 +43,7 @@ class QuadraticCost:
     
 class QuadraticTerminalCost:
 
-    def __init__(self, env, x_nom, Q, istimeinvariant = True):
+    def __init__(self, env, x_nom, Q, end_cost, istimeinvariant = True):
         '''
         Input:
             env : dynamics of the system
@@ -54,6 +54,7 @@ class QuadraticTerminalCost:
         assert len(x_nom) == env.no_states
         self.x_nom = x_nom
         self.istimeinvariant = istimeinvariant # false if it changes with time
+        self.end_cost = end_cost
 
     def compute(self, state, t):
         '''
@@ -65,11 +66,16 @@ class QuadraticTerminalCost:
         #if(abs(state[0] - self.x_nom[0]) < 0.001 and abs(state[1] - self.x_nom[1]) < 0.001):
          #   return -100000
         #if self.istimeinvariant:
-        if(abs(state[0] - self.x_nom[0]) < 0.1 and abs(state[1] - self.x_nom[1]) < 0.1):
-            #print("\n\n\nYay, reached the terminal state\n\n\n")
-            return -10000
+        return 0.5*np.matmul(np.matmul((state - self.x_nom), self.Q),
+                              np.matrix(state - self.x_nom).transpose())
+    def end_status(self, state, t):
+        '''
+        Returns if the desired end status has been reached
+        '''
+        if self.compute(state, t) <= self.end_cost:
+            return True
         else:
-            return 0
+            return False
 
 class ControlRegularizerCost:
 

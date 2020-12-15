@@ -23,9 +23,10 @@ class LinearFeaturesGaussianNACActor:
         self.episode_discounted_cost_arr = []#stores discounted cost after each episode
         self.episode_discounted_log_gradient_arr = []#for each episode
         self.episode_end_position = []
+        self.episode_end_angle = []
         self.parameters_history = []
 
-    def initialize(self, T, alpha, gamma, critic, policy_parameters, features_generator, cost, state_init = None):
+    def initialize(self, T, alpha, gamma, critic, policy_parameters, features_generator, cost, reset, state_init = None):
         '''
         This function intialises the variables for the actor
         Input:
@@ -53,6 +54,7 @@ class LinearFeaturesGaussianNACActor:
         self.cost_arr_index = 0##index into all step/forward pass arrays
         self.episode_cost_arr_index_prev = 0
         self.episode_cost_arr_index = 0#index into all episode arrays
+        self.reset = reset
         
     def sample_action(self, state):
         state_features = self.features_generator.get_s_features(state)
@@ -65,14 +67,6 @@ class LinearFeaturesGaussianNACActor:
         action = np.random.normal(mu, sigma)
         if(self.DEBUG):
             print("Mu: {}, Sigma: {}, action: {}".format(mu, sigma, action))
-        #if(self.cost_arr_index % 1000 == 0):
-        #action = max(-self.torque_limit, min(action, self.torque_limit))#clipping
-        #if(self.DEBUG):
-            #print("Torque: {}".format(action))
-        #state_action_features = self.features_generator.get_sa_features(state, action)
-        #print("S-A Features: {}".format(state_action_features))
-        # Sigma going down to 0 is a real problem in stochastic policies it seems.
-        #epsilon can be a function of I, l
         if(abs(sigma) <  0.0001):#clipping of sorts
             pass #grad_log_prob = mu #bug this one
         else:
@@ -85,42 +79,41 @@ class LinearFeaturesGaussianNACActor:
     def forward_pass(self, use_euler = True):
         '''
         This function runs the forward pass for the actor
+        and returns the reward in the step, and if the episode ended
         '''
         t = self.env.t
-        #jp, jp_d = self.env.get_joint_state()
-        jp, jp_d = self.env.get_state()
-        state = np.array([jp, jp_d], dtype=object)#line can be merged with line above.
+        end_status = False
+        state = self.env.get_state()
         if(self.DEBUG):
             print("State: {}".format(state))
         action, self.grad_log_prob = self.sample_action(state)#will have more dim for 2-DoF & others
         #self.action_history[:,t] = action
         if(self.cost.intermediate_cost != None):
             reward = -1 * (self.cost.intermediate_cost.compute(state, t).item())#the new way to get one item
-            if t < 10:
+            if t < 5:
                 print(reward)
         if(self.cost.control_cost != None):
             reward += -1 * (self.cost.control_cost.compute(action, t).item())
             if t < 10:
                 print(reward)
-        if(self.cost.terminal_cost != None):
-            reward += -1 * (self.cost.terminal_cost.compute(state, t))
-            if t < 10:
-                print(reward)
         if(self.DEBUG):
             print("reward: {}".format(reward))
-        #self.env.step_manipulator(float(action), use_euler = use_euler)
-        self.env.step_double_integrator(float(action))
+        self.env.step(float(action), use_euler)
         #jp_new, jp_d_new = self.env.get_joint_state()
-        jp_new, jp_d_new = self.env.get_state()
-        state_new = np.array([jp_new, jp_d_new], dtype=object)
-        #print("t: {}, self.env.t: {}".format(t, self.env.t))
+        state_new = self.env.get_state()
+        if(self.DEBUG):
+            print("State shifted to: {}".format(state))
         #self.state_history[:,t+1] = jp_new, jp_d_new#t+1 is the new self.env.t
         #self.critic.forward_pass(state, action, state_new, reward)
+        if (self.cost.terminal_cost != None):
+            if(self.cost.terminal_cost.end_status(state, self.env.t)):
+                reward += -1 * (self.cost.terminal_cost.compute(state, t).item())
+                end_status = True
         self.cost_arr.append(float(-reward))
         self.log_gradient_arr.append(self.grad_log_prob)#NEED TO REMOVE THE LAST ITEM for 1
         self.cost_arr_index += 1
         self.old_state = state
-        return reward
+        return reward, end_status
     
         # plt.plot((180.0/np.pi)*self.x[0], label = "new_traj")
         # plt.plot((180.0/np.pi)*self.x_nom[0], label = "old_traj")
@@ -154,36 +147,37 @@ class LinearFeaturesGaussianNACActor:
                     break
                 #Execute rollout
                 #self.factor = 1#????
-                episode_executed = 0
-                while episode_executed == 0:
+                episode_executed = False
+                while episode_executed == False:
                     self.cost_arr_index_prev = self.cost_arr_index
-                    new_init_theta = 0#name has to change
-                    new_init_vel = 0
-                    self.env.reset_state(new_init_theta, new_init_vel)
+                    self.env.reset_state(self.reset.reset())
                     steps_taken = 0
                     for step in range(max_episode_length):
-                        if episode_executed == 1:
+                        if episode_executed == True:
                             break
                         steps_taken = step
-                        self.forward_pass(use_euler)#step level forward pass
+                        reward, episode_executed = self.forward_pass(use_euler)#step level forward pass
+                        state = np.array(self.env.get_state(), dtype=object)#ISN'T this already NUMPY?
                         if(step%1 == 0):
                             if(self.DEBUG):
                                 print("finished pass {} and the cost is {}".format(step, self.cost_arr[-1]))
                         if(self.DEBUG):
                             print("Policy parameters: {}".format(self.parameters))
-                        state = np.array(self.env.get_state(), dtype=object)
                         if(abs(state[0] - 2) > 4 or abs(state[1]) > 1000):
                             if(self.DEBUG):
                                 print("Out of bounds. Ending episode " + str(episode) + " in step (index)" + str(step))
                             break
-                        if (self.cost.terminal_cost != None):
-                            if self.cost.terminal_cost.compute(state, self.env.t) < -1000:#NEED TO BE REMOVED SOME TIME. XXXXXXXXXXXXXXXXXX
-                                episode_executed = 1
-                                episode_success += 1
-                                if(self.DEBUG):
-                                    print("Episode " + str(episode) + " successfully executed in steps " + str(steps_taken + 1))
+                        if(episode_executed):
+                            episode_success += 1
+                        if(self.DEBUG and episode_executed == True):
+                            print("Episode " + str(episode) + " successfully executed in steps " + str(steps_taken + 1))
+                                
                         #print("\n")
-                    episode_executed = 1#NEED TO BE REMOVED SOME TIME. XXXXXXXXXXXXXXXXXX
+                    if(episode_executed == False):
+                        reward = reward + -1 * (self.cost.terminal_cost.compute(state, self.env.t))
+                        self.cost_arr[-1] = (float(-reward))
+                    episode_executed = True
+                    
                 steps_taken += 1
                 self.episode_cost_arr_index += 1
                 
@@ -199,10 +193,6 @@ class LinearFeaturesGaussianNACActor:
                 self.episode_end_position.append(state[0])
                 self.episode_discounted_cost_arr.append(episode_discounted_cost)
                 self.episode_discounted_log_gradient_arr.append(episode_discounted_log_gradient)
-                #if(episode %100000 == 0):
-                 #   print("Episode {} ({}, {})\t: done with cost {}, disc. cost {}, \tin steps {}.".format(
-                  #      episode, new_init_theta, new_init_vel, episode_cost, episode_discounted_cost, 
-                   #     steps_taken))
                 
                 #Backward pass (conditional)
                 if(episode >= self.parameters_size - 1):
@@ -238,7 +228,7 @@ class LinearFeaturesGaussianNACActor:
                     if(cosine_similarity > 0.9998 and episode > self.parameters_size):
                         #cos(1) = 0.9998, cos(2) = 0.9994, cos(5) = 0.9962, cos(10) = 0.9848
                         w_convergence += 1
-                        if(iteration%20 == 0):
+                        if(iteration%50 == 0):
                             print("In iteration " + str(iteration) +", w converged in " + str(episode + 1) + " episodes ")
                             print("J = " + str(w[self.parameters_size-1]))
                         #The update to the actor (policy)
@@ -250,9 +240,9 @@ class LinearFeaturesGaussianNACActor:
                     else:
                         #more episodes.
                         pass
-        print("episode succeeded", episode_success, "times out of", self.episode_cost_arr_index, "episodes")
+        print("\nEpisode succeeded", episode_success, "times out of", self.episode_cost_arr_index, "episodes")
         print("w converged " + str(w_convergence) + " times out of " + str(no_iterations) + " iterations")
-                    
+                   
     def plot(self):  
         plt.plot((180.0/np.pi)*self.state_history[0], label = "trajectory")
         plt.grid()

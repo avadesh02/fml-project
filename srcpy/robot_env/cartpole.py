@@ -114,13 +114,16 @@ class Cartpole:
         self.sim_data = np.array([[init_x], [init_theta], [init_xd], [init_theta_d], [0.0]])
         self.t = 0 # time step counter in mili seconds
 
-    def reset_state(self, init_x, init_theta, init_xd, init_theta_d):
+    def reset(self, new_state):
+        self.reset_cartpole(new_state[0], new_state[1], new_state[2], new_state[3])
+
+    def reset_state(self, new_state):
         '''
         This function resets the system to initial position without resetting history
         Input:
             new initial state
         '''
-        sim_data_t_1 = np.array([[init_x], [init_theta], [init_xd], [init_theta_d], [0.0]])
+        sim_data_t_1 = np.array([[new_state[0]], [new_state[1]], [new_state[0]], [new_state[1]], [0.0]])
         self.sim_data = np.concatenate((self.sim_data, sim_data_t_1), axis = 1)
         self.t += 1
 
@@ -141,7 +144,7 @@ class Cartpole:
         
         self.t += 1
         
-    def step(self, actions):
+    def step(self, actions, use_euler):
         self.step_cartpole(actions)
 
     def get_states(self):
