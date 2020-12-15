@@ -182,6 +182,7 @@ class ILQR:
             Q_uu = l_uu + f_u.T*V_xx*f_u
 
             Q_uu_inv = np.matrix(np.linalg.inv(Q_uu))
+
             self.K[t] = -Q_uu_inv*Q_ux
             self.k[t] = -Q_uu_inv*Q_u
 

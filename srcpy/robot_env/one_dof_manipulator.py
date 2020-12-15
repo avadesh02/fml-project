@@ -251,6 +251,8 @@ class OneDOFManipulator:
                                        frames=np.shape(sim_data)[1], interval=25, blit=True)
 
         plt.show()
+        anim.save("pendulum_env.mp4")
+
 
     def plot(self):
         '''
