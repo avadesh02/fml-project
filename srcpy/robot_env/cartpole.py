@@ -209,6 +209,7 @@ class Cartpole:
                                        frames=np.shape(sim_data)[1], interval=25, blit=True)
 
         plt.show()
+        anim.save("cartpole_env.mp4")
 
     def plot(self):
         '''
