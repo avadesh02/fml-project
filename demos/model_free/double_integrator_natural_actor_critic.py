@@ -64,14 +64,14 @@ alpha_actor = 0.0001
 lfga = LinearFeaturesGaussianNACActor(env, dt, DEBUG)
 actor_init = np.random.normal(0.,0.1,feature_size)#np.array([0.0, 0.0, 0.0, 0.0])
 print("Initial Actor: " + str(actor_init))
-T = 50 * dt#THIS is a hyper parameter I sued wrongly. by keepinh 100, 1000, 10000
+T = 25 * dt#THIS is a hyper parameter I sued wrongly. by keepinh 100, 1000, 10000
 reset = FixedPosition(state_init)
 lfga.initialize(T, alpha_actor, gamma, lfc, actor_init, lf, costs_combined, reset, state_init)
 
 
 #Optimizing the RL model
 use_euler = False#False means Runge-Kutta
-no_iterations = 4000
+no_iterations = 1000
 no_episodes = 15
 max_episode_length = int(np.round(T/dt, 1))
 print(dt, T, no_iterations, no_episodes, max_episode_length)
